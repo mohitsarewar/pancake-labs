@@ -20,35 +20,35 @@ public class PancakeService {
 
     public void addDarkChocolatePancake(UUID orderId, int count) {
         for (int i = 0; i < count; ++i) {
-            addPancake(new DarkChocolatePancake(),
+            addPancake(pancakeWith("dark chocolate"),
                        orders.stream().filter(o -> o.getId().equals(orderId)).findFirst().get());
         }
     }
 
     public void addDarkChocolateWhippedCreamPancake(UUID orderId, int count) {
         for (int i = 0; i < count; ++i) {
-            addPancake(new DarkChocolateWhippedCreamPancake(),
+            addPancake(pancakeWith("dark chocolate", "whipped cream"),
                        orders.stream().filter(o -> o.getId().equals(orderId)).findFirst().get());
         }
     }
 
     public void addDarkChocolateWhippedCreamHazelnutsPancake(UUID orderId, int count) {
         for (int i = 0; i < count; ++i) {
-            addPancake(new DarkChocolateWhippedCreamHazelnutsPancake(),
+            addPancake(pancakeWith("dark chocolate", "whipped cream", "hazelnuts"),
                        orders.stream().filter(o -> o.getId().equals(orderId)).findFirst().get());
         }
     }
 
     public void addMilkChocolatePancake(UUID orderId, int count) {
         for (int i = 0; i < count; ++i) {
-            addPancake(new MilkChocolatePancake(),
+            addPancake(pancakeWith("milk chocolate"),
                        orders.stream().filter(o -> o.getId().equals(orderId)).findFirst().get());
         }
     }
 
     public void addMilkChocolateHazelnutsPancake(UUID orderId, int count) {
         for (int i = 0; i < count; ++i) {
-            addPancake(new MilkChocolateHazelnutsPancake(),
+            addPancake(pancakeWith("milk chocolate", "hazelnuts"),
                        orders.stream().filter(o -> o.getId().equals(orderId)).findFirst().get());
         }
     }
@@ -88,6 +88,14 @@ public class PancakeService {
         preparedOrders.removeIf(u -> u.equals(orderId));
 
         OrderLog.logCancelOrder(order,pancakes);
+    }
+
+    private Pancake pancakeWith(String... ingredients) {
+        Pancake pancake = new Pancake();
+        for (String ingredient : ingredients) {
+            pancake.addIngredient(ingredient);
+        }
+        return pancake;
     }
 
     public void completeOrder(UUID orderId) {

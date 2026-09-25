@@ -165,6 +165,11 @@ public class PancakeServiceTest {
         // tear down
     }
 
+    @Test
+    public void addPancakesTest(){
+
+    }
+
     private void addPancakes() {
         pancakeService.addDarkChocolatePancake(order.getId(), 3);
         pancakeService.addMilkChocolatePancake(order.getId(), 3);
