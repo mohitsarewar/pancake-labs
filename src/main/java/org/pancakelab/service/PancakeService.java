@@ -10,7 +10,7 @@ public class PancakeService {
     private List<Order>         orders          = new ArrayList<>();
     private Set<UUID>           completedOrders = new HashSet<>();
     private Set<UUID>           preparedOrders  = new HashSet<>();
-    private List<PancakeRecipe> pancakes        = new ArrayList<>();
+    private List<Pancake> pancakes        = new ArrayList<>();
 
     public Order createOrder(int building, int room) {
         Order order = new Order(building, room);
@@ -59,7 +59,7 @@ public class PancakeService {
                        .map(PancakeRecipe::description).toList();
     }
 
-    private void addPancake(PancakeRecipe pancake, Order order) {
+    private void addPancake(Pancake pancake, Order order) {
         pancake.setOrderId(order.getId());
         pancakes.add(pancake);
 
@@ -93,7 +93,7 @@ public class PancakeService {
     private Pancake pancakeWith(String... ingredients) {
         Pancake pancake = new Pancake();
         for (String ingredient : ingredients) {
-            pancake.addIngredient(ingredient);
+            pancake.addIngredient(Ingredient.fromName(ingredient));
         }
         return pancake;
     }
@@ -127,5 +127,19 @@ public class PancakeService {
         preparedOrders.removeIf(u -> u.equals(orderId));
 
         return new Object[] {order, pancakesToDeliver};
+    }
+
+    public UUID createPancake(UUID orderId) {
+        Order order = orders.stream().filter(o -> o.getId().equals(orderId)).findFirst().get();
+        Pancake pancake = new Pancake();
+        addPancake(pancake, order);
+        return pancake.getId();
+    }
+
+    public void addIngredient(UUID orderId, UUID pancakeId, String ingredient) {
+        Pancake pancake = pancakes.stream()
+                .filter(p -> p.getOrderId().equals(orderId) && p.getId().equals(pancakeId))
+                .findFirst().get();
+        pancake.addIngredient(Ingredient.fromName(ingredient));
     }
 }

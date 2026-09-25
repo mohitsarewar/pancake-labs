@@ -5,10 +5,15 @@ import java.util.List;
 import java.util.UUID;
 
 public class Pancake implements PancakeRecipe {
+    private final UUID id = UUID.randomUUID();
     private UUID orderId;
-    private final List<String> ingredients = new ArrayList<>();
+    private final List<Ingredient> ingredients = new ArrayList<>();
 
-    public void addIngredient(String ingredient) {
+    public UUID getId() {
+        return id;
+    }
+
+    public void addIngredient(Ingredient ingredient) {
         ingredients.add(ingredient);
     }
 
@@ -24,6 +29,7 @@ public class Pancake implements PancakeRecipe {
 
     @Override
     public List<String> ingredients() {
-        return List.copyOf(ingredients);
+        return ingredients.stream().map(Ingredient::displayName).toList();
     }
+
 }

@@ -166,8 +166,17 @@ public class PancakeServiceTest {
     }
 
     @Test
-    public void addPancakesTest(){
+    public void GivenOrderExists_WhenAddingIngredientToPancake_ThenOrderContainsThatPancake_Test() {
+        // setup
+        PancakeService service = new PancakeService();
+        UUID orderId = service.createOrder(10, 20).getId();
 
+        // exercise
+        UUID pancakeId = service.createPancake(orderId);
+        service.addIngredient(orderId, pancakeId, "dark chocolate");
+
+        // verify
+        assertEquals(List.of(DARK_CHOCOLATE_PANCAKE_DESCRIPTION), service.viewOrder(orderId));
     }
 
     private void addPancakes() {
