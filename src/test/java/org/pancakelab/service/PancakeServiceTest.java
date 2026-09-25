@@ -7,9 +7,11 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -374,6 +376,35 @@ public class PancakeServiceTest {
         // verify
         assertEquals(1, removed);
         assertEquals(2, service.viewOrder(orderId).size());
+    }
+
+    @Test
+    public void GivenManyDisciplesAddingPancakesConcurrently_WhenAllFinish_ThenNoPancakeIsLost_Test() throws Exception {
+        // setup
+        PancakeService service = new PancakeService();
+        UUID orderId = service.createOrder(10, 20);
+        int pancakeCount = 1000;
+        ExecutorService executor = Executors.newFixedThreadPool(16);
+        CountDownLatch startSignal = new CountDownLatch(1);
+        List<Future<?>> results = new ArrayList<>();
+
+        // exercise
+        for (int i = 0; i < pancakeCount; i++) {
+            results.add(executor.submit(() -> {
+                startSignal.await();
+                UUID pancakeId = service.createPancake(orderId);
+                service.addIngredient(orderId, pancakeId, "dark chocolate");
+                return null;
+            }));
+        }
+        startSignal.countDown();
+        for (Future<?> result : results) {
+            result.get(5, TimeUnit.SECONDS);
+        }
+        executor.shutdown();
+
+        // verify
+        assertEquals(pancakeCount, service.viewOrder(orderId).size());
     }
 
     private void addPancakes() {

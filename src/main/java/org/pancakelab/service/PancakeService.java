@@ -8,16 +8,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class PancakeService {
-    private List<Order>         orders          = new ArrayList<>();
-    private List<Pancake> pancakes        = new ArrayList<>();
+    private final List<Order> orders = new ArrayList<>();
+    private final List<Pancake> pancakes = new ArrayList<>();
 
-    public UUID createOrder(int building, int room) {
+    public synchronized UUID createOrder(int building, int room) {
         Order order = new Order(building, room);
         orders.add(order);
         return order.getId();
     }
 
-    public List<String> viewOrder(UUID orderId) {
+    public synchronized List<String> viewOrder(UUID orderId) {
         return pancakes.stream()
                        .filter(pancake -> pancake.getOrderId().equals(orderId))
                        .map(PancakeRecipe::description).toList();
@@ -30,7 +30,7 @@ public class PancakeService {
         OrderLog.logAddPancake(order, pancake.description(), pancakes);
     }
 
-    public int removePancakes(String description, UUID orderId, int count) {
+    public synchronized int removePancakes(String description, UUID orderId, int count) {
         Order order = findOrder(orderId);
         order.ensureStatus(Order.Status.OPEN);
         final AtomicInteger removedCount = new AtomicInteger(0);
@@ -48,7 +48,7 @@ public class PancakeService {
         return removedCount.get();
     }
 
-    public void cancelOrder(UUID orderId) {
+    public synchronized void cancelOrder(UUID orderId) {
         Order order = findOrder(orderId);
         order.ensureStatus(Order.Status.OPEN);
         OrderLog.logCancelOrder(order, this.pancakes);
@@ -72,15 +72,15 @@ public class PancakeService {
                         "Pancake " + pancakeId + " not found in order " + orderId));
     }
 
-    public void completeOrder(UUID orderId) {
+    public synchronized void completeOrder(UUID orderId) {
         findOrder(orderId).complete();
     }
 
-    public Set<UUID> listCompletedOrders() {
+    public synchronized Set<UUID> listCompletedOrders() {
         return ordersWithStatus(Order.Status.COMPLETED);
     }
 
-    public Set<UUID> listPreparedOrders() {
+    public synchronized Set<UUID> listPreparedOrders() {
         return ordersWithStatus(Order.Status.PREPARED);
     }
 
@@ -91,16 +91,16 @@ public class PancakeService {
                 .collect(Collectors.toUnmodifiableSet());
     }
 
-    public void prepareOrder(UUID orderId) {
+    public synchronized void prepareOrder(UUID orderId) {
         findOrder(orderId).prepare();
     }
 
-    public OrderSummary orderSummary(UUID orderId) {
+    public synchronized OrderSummary orderSummary(UUID orderId) {
         Order order = findOrder(orderId);
         return new OrderSummary(order.getId(), order.getBuilding(), order.getRoom(), viewOrder(orderId));
     }
 
-    public OrderSummary deliverOrder(UUID orderId) {
+    public synchronized OrderSummary deliverOrder(UUID orderId) {
         Order order = findOrder(orderId);
         order.ensureStatus(Order.Status.PREPARED);
         OrderSummary delivery = orderSummary(orderId);
@@ -112,7 +112,7 @@ public class PancakeService {
         return delivery;
     }
 
-    public UUID createPancake(UUID orderId) {
+    public synchronized UUID createPancake(UUID orderId) {
         Order order = findOrder(orderId);
         order.ensureStatus(Order.Status.OPEN);
         Pancake pancake = new Pancake();
@@ -120,7 +120,7 @@ public class PancakeService {
         return pancake.getId();
     }
 
-    public void addIngredient(UUID orderId, UUID pancakeId, String ingredient) {
+    public synchronized void addIngredient(UUID orderId, UUID pancakeId, String ingredient) {
         findOrder(orderId).ensureStatus(Order.Status.OPEN);
         findPancake(orderId, pancakeId).addIngredient(Ingredient.fromName(ingredient));
     }
