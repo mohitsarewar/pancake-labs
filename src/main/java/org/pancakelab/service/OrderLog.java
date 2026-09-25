@@ -8,7 +8,7 @@ import java.util.List;
 public class OrderLog {
     private static final StringBuilder log = new StringBuilder();
 
-    public static void logAddPancake(Order order, String description, List<? extends PancakeRecipe> pancakes) {
+    public synchronized static void logAddPancake(Order order, String description, List<? extends PancakeRecipe> pancakes) {
         long pancakesInOrder = pancakes.stream().filter(p -> p.getOrderId().equals(order.getId())).count();
 
         log.append("Added pancake with description '%s' ".formatted(description))
@@ -16,7 +16,7 @@ public class OrderLog {
            .append("for building %d, room %d.".formatted(order.getBuilding(), order.getRoom()));
     }
 
-    public static void logRemovePancakes(Order order, String description, int count, List<? extends PancakeRecipe> pancakes) {
+    public synchronized static void logRemovePancakes(Order order, String description, int count, List<? extends PancakeRecipe> pancakes) {
         long pancakesInOrder = pancakes.stream().filter(p -> p.getOrderId().equals(order.getId())).count();
 
         log.append("Removed %d pancake(s) with description '%s' ".formatted(count, description))
@@ -24,13 +24,13 @@ public class OrderLog {
            .append("for building %d, room %d.".formatted(order.getBuilding(), order.getRoom()));
     }
 
-    public static void logCancelOrder(Order order, List<? extends PancakeRecipe> pancakes) {
+    public synchronized static void logCancelOrder(Order order, List<? extends PancakeRecipe> pancakes) {
         long pancakesInOrder = pancakes.stream().filter(p -> p.getOrderId().equals(order.getId())).count();
         log.append("Cancelled order %s with %d pancakes ".formatted(order.getId(), pancakesInOrder))
            .append("for building %d, room %d.".formatted(order.getBuilding(), order.getRoom()));
     }
 
-    public static void logDeliverOrder(Order order, List<? extends PancakeRecipe> pancakes) {
+    public synchronized static void logDeliverOrder(Order order, List<? extends PancakeRecipe> pancakes) {
         long pancakesInOrder = pancakes.stream().filter(p -> p.getOrderId().equals(order.getId())).count();
         log.append("Order %s with %d pancakes ".formatted(order.getId(), pancakesInOrder))
            .append("for building %d, room %d out for delivery.".formatted(order.getBuilding(), order.getRoom()));

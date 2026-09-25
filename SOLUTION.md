@@ -147,7 +147,6 @@ Any other transition is rejected with `IllegalStateException`.
 - Ingredient names must match the menu exactly (e.g. `"dark chocolate"`, case-sensitive).
 - Empty pancakes, empty orders and repeated ingredients are allowed.
 - `viewOrder` returns an empty list for an unknown or already removed order.
-- The application uses a single `PancakeService` instance.
 
 ## Concurrency
 
@@ -157,9 +156,8 @@ Any other transition is rejected with `IllegalStateException`.
 - This is safe because no domain object leaves the service. `Order` and `Pancake` are
   only ever accessed while the service lock is held; callers only receive IDs, copies and
   immutable records.
-- `OrderLog` uses a shared static log. It is only called from the service's synchronized
-  methods, so with a single `PancakeService` instance it is protected by the same lock.
-  With multiple instances, the log methods would need their own lock.
+- `OrderLog` writes to a shared static log, so its methods are `static synchronized`.
+    The log is safe regardless of how many `PancakeService` instances exist.
 - **Trade-off:** all orders are serialised through one lock. This is simple and correct
   for the Dojo's scale. For higher throughput, pancakes would move into `Order`, each order
   would be locked individually, and orders would be stored in a `ConcurrentHashMap`.
