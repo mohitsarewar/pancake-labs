@@ -39,3 +39,6 @@ The Sensei has put forth some conditions:
 
 
 Start now your assignment and save the Dojo.
+
+
+> **Solution write-up, design decisions and UML diagrams: see [SOLUTION.md](SOLUTION.md)**

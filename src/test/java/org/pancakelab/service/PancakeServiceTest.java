@@ -347,7 +347,7 @@ public class PancakeServiceTest {
     public void GivenOrderCompleted_WhenRemovingPancakes_ThenRejected_Test() {
         // setup
         PancakeService service = new PancakeService();
-        orderId = service.createOrder(10, 20);
+        UUID orderId = service.createOrder(10, 20);
         UUID pancakeId = service.createPancake(orderId);
         service.addIngredient(orderId, pancakeId, "dark chocolate");
         service.completeOrder(orderId);

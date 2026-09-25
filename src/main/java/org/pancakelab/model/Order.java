@@ -8,9 +8,6 @@ public class Order {
     private final int building;
     private final int room;
 
-
-
-    // in production values can flow from config
     private static final int MIN_BUILDING = 1;
     private static final int MIN_ROOM     = 1;
 
