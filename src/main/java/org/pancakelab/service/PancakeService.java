@@ -30,7 +30,7 @@ public class PancakeService {
         OrderLog.logAddPancake(order, pancake.description(), pancakes);
     }
 
-    public void removePancakes(String description, UUID orderId, int count) {
+    public int removePancakes(String description, UUID orderId, int count) {
         Order order = findOrder(orderId);
         order.ensureStatus(Order.Status.OPEN);
         final AtomicInteger removedCount = new AtomicInteger(0);
@@ -45,6 +45,7 @@ public class PancakeService {
         });
 
         OrderLog.logRemovePancakes(order, description, removedCount.get(), pancakes);
+        return removedCount.get();
     }
 
     public void cancelOrder(UUID orderId) {

@@ -358,6 +358,24 @@ public class PancakeServiceTest {
         assertEquals(List.of(DARK_CHOCOLATE_PANCAKE_DESCRIPTION), service.viewOrder(orderId));
     }
 
+    @Test
+    public void GivenThreeMatchingPancakes_WhenRemovingOne_ThenOneReportedRemoved_Test() {
+        // setup
+        PancakeService service = new PancakeService();
+        UUID orderId = service.createOrder(10, 20);
+        for (int i = 0; i < 3; i++) {
+            UUID pancakeId = service.createPancake(orderId);
+            service.addIngredient(orderId, pancakeId, "dark chocolate");
+        }
+
+        // exercise
+        int removed = service.removePancakes(DARK_CHOCOLATE_PANCAKE_DESCRIPTION, orderId, 1);
+
+        // verify
+        assertEquals(1, removed);
+        assertEquals(2, service.viewOrder(orderId).size());
+    }
+
     private void addPancakes() {
         addPancakes(3, "dark chocolate");
         addPancakes(3, "milk chocolate");
