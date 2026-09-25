@@ -179,9 +179,70 @@ public class PancakeServiceTest {
         assertEquals(List.of(DARK_CHOCOLATE_PANCAKE_DESCRIPTION), service.viewOrder(orderId));
     }
 
+    @Test
+    public void GivenPancakeExists_WhenAddingIngredientNotOnMenu_ThenRejectedAndPancakeUnchanged_Test() {
+        // setup
+        PancakeService service = new PancakeService();
+        UUID orderId = service.createOrder(10, 20).getId();
+        UUID pancakeId = service.createPancake(orderId);
+        service.addIngredient(orderId, pancakeId, "dark chocolate");
+
+        // exercise & verify
+        assertThrows(IllegalArgumentException.class,
+                () -> service.addIngredient(orderId, pancakeId, "mustard"));
+
+        // verify
+        assertEquals(List.of(DARK_CHOCOLATE_PANCAKE_DESCRIPTION), service.viewOrder(orderId));
+
+        // tear down
+    }
+
+    @Test
+    public void GivenOrderDoesNotExist_WhenCreatingPancake_ThenRejected_Test() {
+        // setup
+        PancakeService service = new PancakeService();
+
+        // exercise & verify
+        assertThrows(IllegalArgumentException.class,
+                () -> service.createPancake(UUID.randomUUID()));
+    }
+
+    @Test
+    public void GivenPancakeDoesNotExist_WhenAddingIngredient_ThenRejected_Test() {
+        // setup
+        PancakeService service = new PancakeService();
+        UUID orderId = service.createOrder(10, 20).getId();
+
+        // exercise & verify
+        assertThrows(IllegalArgumentException.class,
+                () -> service.addIngredient(orderId, UUID.randomUUID(), "dark chocolate"));
+    }
+
+    @Test
+    public void GivenPancakeBelongsToAnotherOrder_WhenAddingIngredient_ThenRejected_Test() {
+        // setup
+        PancakeService service = new PancakeService();
+        UUID firstOrderId = service.createOrder(10, 20).getId();
+        UUID secondOrderId = service.createOrder(11, 21).getId();
+        UUID pancakeInFirstOrder = service.createPancake(firstOrderId);
+
+        // exercise & verify
+        assertThrows(IllegalArgumentException.class,
+                () -> service.addIngredient(secondOrderId, pancakeInFirstOrder, "dark chocolate"));
+    }
+
     private void addPancakes() {
-        pancakeService.addDarkChocolatePancake(order.getId(), 3);
-        pancakeService.addMilkChocolatePancake(order.getId(), 3);
-        pancakeService.addMilkChocolateHazelnutsPancake(order.getId(), 3);
+        addPancakes(3, "dark chocolate");
+        addPancakes(3, "milk chocolate");
+        addPancakes(3, "milk chocolate", "hazelnuts");
+    }
+
+    private void addPancakes(int count, String... ingredients) {
+        for (int i = 0; i < count; i++) {
+            UUID pancakeId = pancakeService.createPancake(order.getId());
+            for (String ingredient : ingredients) {
+                pancakeService.addIngredient(order.getId(), pancakeId, ingredient);
+            }
+        }
     }
 }
