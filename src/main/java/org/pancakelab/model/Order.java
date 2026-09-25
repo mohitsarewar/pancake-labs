@@ -8,7 +8,22 @@ public class Order {
     private final int building;
     private final int room;
 
+
+
+    // in production values can flow from config
+    private static final int MIN_BUILDING = 1;
+    private static final int MIN_ROOM     = 1;
+
+    public enum Status { OPEN, COMPLETED, PREPARED }
+    private Status status = Status.OPEN;
+
     public Order(int building, int room) {
+        if (building < MIN_BUILDING) {
+            throw new IllegalArgumentException("Building does not exist: " + building);
+        }
+        if (room < MIN_ROOM) {
+            throw new IllegalArgumentException("Room does not exist: " + room);
+        }
         this.id = UUID.randomUUID();
         this.building = building;
         this.room = room;
@@ -24,6 +39,30 @@ public class Order {
 
     public int getRoom() {
         return room;
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public void complete() {
+        moveTo(Status.OPEN, Status.COMPLETED);
+    }
+
+    public void prepare() {
+        moveTo(Status.COMPLETED, Status.PREPARED);
+    }
+
+    public void ensureStatus(Status expected) {
+        if (status != expected) {
+            throw new IllegalStateException(
+                    "Order " + id + " is " + status + " but must be " + expected);
+        }
+    }
+
+    private void moveTo(Status from, Status to) {
+        ensureStatus(from);
+        status = to;
     }
 
     @Override

@@ -4,7 +4,8 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.pancakelab.model.Order;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.List;
 import java.util.Set;
@@ -16,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class PancakeServiceTest {
     private PancakeService pancakeService = new PancakeService();
-    private Order          order          = null;
+    private UUID orderId = null;
 
     private final static String DARK_CHOCOLATE_PANCAKE_DESCRIPTION           = "Delicious pancake with dark chocolate!";
     private final static String MILK_CHOCOLATE_PANCAKE_DESCRIPTION           = "Delicious pancake with milk chocolate!";
@@ -28,10 +29,11 @@ public class PancakeServiceTest {
         // setup
 
         // exercise
-        order = pancakeService.createOrder(10, 20);
+        orderId = pancakeService.createOrder(10, 20);
 
-        assertEquals(10, order.getBuilding());
-        assertEquals(20, order.getRoom());
+        OrderSummary summary = pancakeService.orderSummary(orderId);
+        assertEquals(10, summary.building());
+        assertEquals(20, summary.room());
 
         // verify
 
@@ -47,7 +49,7 @@ public class PancakeServiceTest {
         addPancakes();
 
         // verify
-        List<String> ordersPancakes = pancakeService.viewOrder(order.getId());
+        List<String> ordersPancakes = pancakeService.viewOrder(orderId);
 
         assertEquals(List.of(DARK_CHOCOLATE_PANCAKE_DESCRIPTION,
                              DARK_CHOCOLATE_PANCAKE_DESCRIPTION,
@@ -68,12 +70,12 @@ public class PancakeServiceTest {
         // setup
 
         // exercise
-        pancakeService.removePancakes(DARK_CHOCOLATE_PANCAKE_DESCRIPTION, order.getId(), 2);
-        pancakeService.removePancakes(MILK_CHOCOLATE_PANCAKE_DESCRIPTION, order.getId(), 3);
-        pancakeService.removePancakes(MILK_CHOCOLATE_HAZELNUTS_PANCAKE_DESCRIPTION, order.getId(), 1);
+        pancakeService.removePancakes(DARK_CHOCOLATE_PANCAKE_DESCRIPTION, orderId, 2);
+        pancakeService.removePancakes(MILK_CHOCOLATE_PANCAKE_DESCRIPTION, orderId, 3);
+        pancakeService.removePancakes(MILK_CHOCOLATE_HAZELNUTS_PANCAKE_DESCRIPTION, orderId, 1);
 
         // verify
-        List<String> ordersPancakes = pancakeService.viewOrder(order.getId());
+        List<String> ordersPancakes = pancakeService.viewOrder(orderId);
 
         assertEquals(List.of(DARK_CHOCOLATE_PANCAKE_DESCRIPTION,
                              MILK_CHOCOLATE_HAZELNUTS_PANCAKE_DESCRIPTION,
@@ -88,11 +90,11 @@ public class PancakeServiceTest {
         // setup
 
         // exercise
-        pancakeService.completeOrder(order.getId());
+        pancakeService.completeOrder(orderId);
 
         // verify
         Set<UUID> completedOrdersOrders = pancakeService.listCompletedOrders();
-        assertTrue(completedOrdersOrders.contains(order.getId()));
+        assertTrue(completedOrdersOrders.contains(orderId));
 
         // tear down
     }
@@ -103,14 +105,14 @@ public class PancakeServiceTest {
         // setup
 
         // exercise
-        pancakeService.prepareOrder(order.getId());
+        pancakeService.prepareOrder(orderId);
 
         // verify
         Set<UUID> completedOrders = pancakeService.listCompletedOrders();
-        assertFalse(completedOrders.contains(order.getId()));
+        assertFalse(completedOrders.contains(orderId));
 
         Set<UUID> preparedOrders = pancakeService.listPreparedOrders();
-        assertTrue(preparedOrders.contains(order.getId()));
+        assertTrue(preparedOrders.contains(orderId));
 
         // tear down
     }
@@ -119,46 +121,48 @@ public class PancakeServiceTest {
     @org.junit.jupiter.api.Order(60)
     public void GivenOrderExists_WhenDeliveringOrder_ThenCorrectOrderReturnedAndOrderRemovedFromTheDatabase_Test() {
         // setup
-        List<String> pancakesToDeliver = pancakeService.viewOrder(order.getId());
+        List<String> pancakesToDeliver = pancakeService.viewOrder(orderId);
 
         // exercise
-        Object[] deliveredOrder = pancakeService.deliverOrder(order.getId());
+        OrderSummary delivered = pancakeService.deliverOrder(orderId);
 
         // verify
         Set<UUID> completedOrders = pancakeService.listCompletedOrders();
-        assertFalse(completedOrders.contains(order.getId()));
+        assertFalse(completedOrders.contains(orderId));
 
         Set<UUID> preparedOrders = pancakeService.listPreparedOrders();
-        assertFalse(preparedOrders.contains(order.getId()));
+        assertFalse(preparedOrders.contains(orderId));
 
-        List<String> ordersPancakes = pancakeService.viewOrder(order.getId());
+        List<String> ordersPancakes = pancakeService.viewOrder(orderId);
 
         assertEquals(List.of(), ordersPancakes);
-        assertEquals(order.getId(), ((Order) deliveredOrder[0]).getId());
-        assertEquals(pancakesToDeliver, (List<String>) deliveredOrder[1]);
+        assertEquals(orderId, delivered.orderId());
+        assertEquals(10, delivered.building());
+        assertEquals(20, delivered.room());
+        assertEquals(pancakesToDeliver, delivered.pancakes());
 
         // tear down
-        order = null;
+        orderId = null;
     }
 
     @Test
     @org.junit.jupiter.api.Order(70)
     public void GivenOrderExists_WhenCancellingOrder_ThenOrderAndPancakesRemoved_Test() {
         // setup
-        order = pancakeService.createOrder(10, 20);
+        orderId = pancakeService.createOrder(10, 20);
         addPancakes();
 
         // exercise
-        pancakeService.cancelOrder(order.getId());
+        pancakeService.cancelOrder(orderId);
 
         // verify
         Set<UUID> completedOrders = pancakeService.listCompletedOrders();
-        assertFalse(completedOrders.contains(order.getId()));
+        assertFalse(completedOrders.contains(orderId));
 
         Set<UUID> preparedOrders = pancakeService.listPreparedOrders();
-        assertFalse(preparedOrders.contains(order.getId()));
+        assertFalse(preparedOrders.contains(orderId));
 
-        List<String> ordersPancakes = pancakeService.viewOrder(order.getId());
+        List<String> ordersPancakes = pancakeService.viewOrder(orderId);
 
         assertEquals(List.of(), ordersPancakes);
 
@@ -169,7 +173,7 @@ public class PancakeServiceTest {
     public void GivenOrderExists_WhenAddingIngredientToPancake_ThenOrderContainsThatPancake_Test() {
         // setup
         PancakeService service = new PancakeService();
-        UUID orderId = service.createOrder(10, 20).getId();
+        UUID orderId = service.createOrder(10, 20);
 
         // exercise
         UUID pancakeId = service.createPancake(orderId);
@@ -183,7 +187,7 @@ public class PancakeServiceTest {
     public void GivenPancakeExists_WhenAddingIngredientNotOnMenu_ThenRejectedAndPancakeUnchanged_Test() {
         // setup
         PancakeService service = new PancakeService();
-        UUID orderId = service.createOrder(10, 20).getId();
+        UUID orderId = service.createOrder(10, 20);
         UUID pancakeId = service.createPancake(orderId);
         service.addIngredient(orderId, pancakeId, "dark chocolate");
 
@@ -211,7 +215,7 @@ public class PancakeServiceTest {
     public void GivenPancakeDoesNotExist_WhenAddingIngredient_ThenRejected_Test() {
         // setup
         PancakeService service = new PancakeService();
-        UUID orderId = service.createOrder(10, 20).getId();
+        UUID orderId = service.createOrder(10, 20);
 
         // exercise & verify
         assertThrows(IllegalArgumentException.class,
@@ -222,13 +226,136 @@ public class PancakeServiceTest {
     public void GivenPancakeBelongsToAnotherOrder_WhenAddingIngredient_ThenRejected_Test() {
         // setup
         PancakeService service = new PancakeService();
-        UUID firstOrderId = service.createOrder(10, 20).getId();
-        UUID secondOrderId = service.createOrder(11, 21).getId();
+        UUID firstOrderId = service.createOrder(10, 20);
+        UUID secondOrderId = service.createOrder(11, 21);
         UUID pancakeInFirstOrder = service.createPancake(firstOrderId);
 
         // exercise & verify
         assertThrows(IllegalArgumentException.class,
                 () -> service.addIngredient(secondOrderId, pancakeInFirstOrder, "dark chocolate"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {-1, 0})
+    public void GivenBuildingDoesNotExist_WhenCreatingOrder_ThenRejected_Test(int building) {
+        // setup
+        PancakeService service = new PancakeService();
+
+        // exercise & verify
+        assertThrows(IllegalArgumentException.class, () -> service.createOrder(building, 20));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {-1, 0})
+    public void GivenRoomDoesNotExist_WhenCreatingOrder_ThenRejected_Test(int room) {
+        // setup
+        PancakeService service = new PancakeService();
+
+        // exercise & verify
+        assertThrows(IllegalArgumentException.class, () -> service.createOrder(10, room));
+    }
+
+    @Test
+    public void GivenBoundaryBuildingAndRoom_WhenCreatingOrder_ThenAccepted_Test() {
+        // setup
+        PancakeService service = new PancakeService();
+
+        // exercise & verify
+        assertDoesNotThrow(() -> service.createOrder(1, 1));
+        assertDoesNotThrow(() -> service.createOrder(20, 999));
+    }
+
+    @Test
+    public void GivenOrderNotCompleted_WhenPreparingOrder_ThenRejected_Test() {
+        // setup
+        PancakeService service = new PancakeService();
+        UUID orderId = service.createOrder(10, 20);
+
+        // exercise & verify
+        assertThrows(IllegalStateException.class, () -> service.prepareOrder(orderId));
+    }
+
+    @Test
+    public void GivenOrderNotPrepared_WhenDeliveringOrder_ThenRejected_Test() {
+        // setup
+        PancakeService service = new PancakeService();
+        UUID orderId = service.createOrder(10, 20);
+        service.completeOrder(orderId);
+
+        // exercise & verify
+        assertThrows(IllegalStateException.class, () -> service.deliverOrder(orderId));
+    }
+
+    @Test
+    public void GivenOrderCompleted_WhenAddingPancake_ThenRejected_Test() {
+        // setup
+        PancakeService service = new PancakeService();
+        UUID orderId = service.createOrder(10, 20);
+        service.completeOrder(orderId);
+
+        // exercise & verify
+        assertThrows(IllegalStateException.class, () -> service.createPancake(orderId));
+    }
+
+    @Test
+    public void GivenOrderCompleted_WhenAddingIngredient_ThenRejected_Test() {
+        // setup
+        PancakeService service = new PancakeService();
+        UUID orderId = service.createOrder(10, 20);
+        UUID pancakeId = service.createPancake(orderId);
+        service.completeOrder(orderId);
+
+        // exercise & verify
+        assertThrows(IllegalStateException.class,
+                () -> service.addIngredient(orderId, pancakeId, "dark chocolate"));
+    }
+
+    @Test
+    public void GivenOrderCompleted_WhenCompletingAgain_ThenRejected_Test() {
+        // setup
+        PancakeService service = new PancakeService();
+        UUID orderId = service.createOrder(10, 20);
+        service.completeOrder(orderId);
+
+        // exercise & verify
+        assertThrows(IllegalStateException.class, () -> service.completeOrder(orderId));
+    }
+
+    @Test
+    public void GivenOrderCompleted_WhenCancellingOrder_ThenRejected_Test() {
+        // setup
+        PancakeService service = new PancakeService();
+        UUID orderId = service.createOrder(10, 20);
+        service.completeOrder(orderId);
+
+        // exercise & verify
+        assertThrows(IllegalStateException.class, () -> service.cancelOrder(orderId));
+    }
+
+    @Test
+    public void GivenOrderDoesNotExist_WhenCompletingOrder_ThenRejected_Test() {
+        // setup
+        PancakeService service = new PancakeService();
+
+        // exercise & verify
+        assertThrows(IllegalArgumentException.class, () -> service.completeOrder(UUID.randomUUID()));
+    }
+
+    @Test
+    public void GivenOrderCompleted_WhenRemovingPancakes_ThenRejected_Test() {
+        // setup
+        PancakeService service = new PancakeService();
+        orderId = service.createOrder(10, 20);
+        UUID pancakeId = service.createPancake(orderId);
+        service.addIngredient(orderId, pancakeId, "dark chocolate");
+        service.completeOrder(orderId);
+
+        // exercise & verify
+        assertThrows(IllegalStateException.class,
+                () -> service.removePancakes(DARK_CHOCOLATE_PANCAKE_DESCRIPTION, orderId, 1));
+
+        // verify: the pancake is still there
+        assertEquals(List.of(DARK_CHOCOLATE_PANCAKE_DESCRIPTION), service.viewOrder(orderId));
     }
 
     private void addPancakes() {
@@ -239,9 +366,9 @@ public class PancakeServiceTest {
 
     private void addPancakes(int count, String... ingredients) {
         for (int i = 0; i < count; i++) {
-            UUID pancakeId = pancakeService.createPancake(order.getId());
+            UUID pancakeId = pancakeService.createPancake(orderId);
             for (String ingredient : ingredients) {
-                pancakeService.addIngredient(order.getId(), pancakeId, ingredient);
+                pancakeService.addIngredient(orderId, pancakeId, ingredient);
             }
         }
     }
